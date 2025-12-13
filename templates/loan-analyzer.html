@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Payment Analyzer - Smart Finance</title>
+    <!-- Flask static file path -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/loan-analyzer.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="{{ url_for('index') }}" class="logo">💰 Smart Finance</a>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('loan_analyzer') }}" class="active">Loan Analyzer</a></li>
+                <li><a href="#">Investment Growth</a></li>
+                <li><a href="#">Stock Trends</a></li>
+                <li><a href="#">About</a></li>
+            </ul>
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <h1>📊 Loan Payment Analyzer</h1>
+        <p>Calculate monthly payments using numerical root-finding methods</p>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h3 class="card-title">Loan Parameters</h3>
+            <form class="form-grid" id="loanForm">
+                <div class="form-group">
+                    <label>
+                        Principal Amount ($)
+                        <span class="info-icon" data-tooltip="Total loan amount">?</span>
+                    </label>
+                    <input type="number" id="principal" placeholder="50000" value="50000">
+                </div>
+                <div class="form-group">
+                    <label>
+                        Annual Interest Rate (%)
+                        <span class="info-icon" data-tooltip="Yearly interest percentage">?</span>
+                    </label>
+                    <input type="number" id="interestRate" step="0.1" placeholder="5.5" value="5.5">
+                </div>
+                <div class="form-group">
+                    <label>
+                        Loan Term
+                        <span class="info-icon" data-tooltip="Duration of the loan">?</span>
+                    </label>
+                    <input type="number" id="loanTerm" placeholder="30" value="30">
+                </div>
+                <div class="form-group">
+                    <label>Term Unit</label>
+                    <select id="termUnit">
+                        <option value="years">Years</option>
+                        <option value="months">Months</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Compounding Frequency</label>
+                    <select id="compounding">
+                        <option value="monthly">Monthly</option>
+                        <option value="quarterly">Quarterly</option>
+                        <option value="annually">Annually</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>
+                        Numerical Method
+                        <span class="info-icon" data-tooltip="Choose root-finding algorithm">?</span>
+                    </label>
+                    <select id="method">
+                        <option value="secant">Secant Method</option>
+                        <option value="newton">Newton-Raphson</option>
+                    </select>
+                </div>
+            </form>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="calculatePayment()">Calculate Payment</button>
+                <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
+                <button class="btn btn-secondary" onclick="toggleAmortization()">Show Amortization</button>
+                <button class="btn btn-secondary btn-small" onclick="exportCSV()">Export CSV</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">Results</h3>
+            <div class="results-grid">
+                <div class="result-card">
+                    <div class="result-label">Monthly Payment</div>
+                    <div class="result-value" id="monthlyPayment">$0.00</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">Total Interest</div>
+                    <div class="result-value" id="totalInterest">$0</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">Total Paid</div>
+                    <div class="result-value" id="totalPaid">$0</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">Iterations</div>
+                    <div class="result-value" id="iterations">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">Iteration Log</h3>
+            <div class="iteration-log" id="iterationLog">
+                <div class="iteration-row">Click "Calculate Payment" to see iteration details...</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 class="card-title">Balance Over Time</h3>
+            <div class="chart-container">
+                <canvas id="balanceChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card" id="amortizationCard" style="display: none;">
+            <h3 class="card-title">Amortization Schedule</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Payment</th>
+                            <th>Principal</th>
+                            <th>Interest</th>
+                            <th>Balance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="amortizationBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-light);">
+                                Calculate payment to view amortization schedule
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="method-explanation">
+            <h3 style="margin-bottom: 1rem;">📚 Method Explanation: Numerical Root-Finding</h3>
+            <p style="margin-bottom: 1rem;">
+                The Newton-Raphson and Secant methods find roots by iteratively improving guesses. 
+                For loan calculations, we solve for the payment amount M that satisfies the loan equation.
+            </p>
+            
+            <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Newton-Raphson Method</h4>
+            <div class="formula">
+                x<sub>n+1</sub> = x<sub>n</sub> - f(x<sub>n</sub>) / f'(x<sub>n</sub>)
+            </div>
+            <p><strong>Why chosen:</strong> Fast convergence (quadratic) when initial guess is close to the solution.</p>
+            <p><strong>Limitations:</strong> Requires derivative; may fail if derivative is near zero.</p>
+            
+            <h4 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Secant Method</h4>
+            <div class="formula">
+                x<sub>n+1</sub> = x<sub>n</sub> - f(x<sub>n</sub>) · (x<sub>n</sub> - x<sub>n-1</sub>) / (f(x<sub>n</sub>) - f(x<sub>n-1</sub>))
+            </div>
+            <p><strong>Why chosen:</strong> No derivative needed; generally reliable convergence.</p>
+            <p><strong>Limitations:</strong> Slightly slower than Newton-Raphson; needs two initial guesses.</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2024 Smart Finance Calculator | Educational Tool for Numerical Methods</p>
+    </footer>
+
+    <!-- Flask static file path for JavaScript -->
+    <script src="{{ url_for('static', filename='js/loan-analyzer.js') }}"></script>
+</body>
+</html>
