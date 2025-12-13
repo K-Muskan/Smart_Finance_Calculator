@@ -1,38 +1,27 @@
 from flask import Flask, render_template, request, jsonify
 from modules.loan_payment import LoanCalculator
 import traceback
+import io
+import csv
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-this'
 app.config['JSON_SORT_KEYS'] = False
 
-# ============================================
-# ROUTES - Web Pages
-# ============================================
-
+# Routes
 @app.route('/')
 def index():
-    """Home page"""
-    return render_template('loan-analyzer.html')
+    return render_template('index.html')
 
 @app.route('/loan-analyzer')
 def loan_analyzer():
-    """Loan analyzer page with Newton-Raphson calculator"""
     return render_template('loan-analyzer.html')
 
-@app.route('/about')
-def about():
-    """About page"""
-    return render_template('about.html')
-
-# ============================================
-# API ENDPOINTS - Calculations
-# ============================================
-
+# API Endpoints
 @app.route('/api/calculate', methods=['POST'])
 def calculate_payment():
     """
-    API endpoint to calculate loan payment using Newton-Raphson method
+    API endpoint to calculate loan payment using Newton-Raphson or Secant method
     
     Expected JSON input:
     {
@@ -40,7 +29,8 @@ def calculate_payment():
         "annualRate": 5.5,
         "loanTerm": 30,
         "termUnit": "years",
-        "compounding": "monthly"
+        "compounding": "monthly",
+        "method": "newton"  // or "secant"
     }
     
     Returns:
@@ -51,28 +41,26 @@ def calculate_payment():
         "iterations": [...],
         "numIterations": 8,
         "converged": true,
+        "method": "Newton-Raphson Method",
         "monthlyRate": 0.00458,
         "totalMonths": 360
     }
     """
     try:
-        # Get JSON data from request
         data = request.get_json()
         
-        # Validate required fields
         required_fields = ['principal', 'annualRate', 'loanTerm']
         for field in required_fields:
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
         
-        # Extract and validate parameters
         principal = float(data.get('principal', 0))
         annual_rate = float(data.get('annualRate', 0))
         loan_term = float(data.get('loanTerm', 0))
         term_unit = data.get('termUnit', 'years')
         compounding = data.get('compounding', 'monthly')
+        method = data.get('method', 'newton')  # Default to Newton-Raphson
         
-        # Validate inputs
         if principal <= 0:
             return jsonify({'error': 'Principal amount must be greater than 0'}), 400
         if annual_rate < 0:
@@ -80,7 +68,6 @@ def calculate_payment():
         if loan_term <= 0:
             return jsonify({'error': 'Loan term must be greater than 0'}), 400
         
-        # Create calculator instance
         calculator = LoanCalculator(
             principal=principal,
             annual_rate=annual_rate,
@@ -89,8 +76,11 @@ def calculate_payment():
             compounding=compounding
         )
         
-        # Calculate payment using Newton-Raphson method
-        result = calculator.calculate_newton_raphson()
+        # Calculate using selected method
+        if method == 'secant':
+            result = calculator.calculate_secant()
+        else:  # newton (default)
+            result = calculator.calculate_newton_raphson()
         
         return jsonify(result), 200
     
@@ -100,7 +90,6 @@ def calculate_payment():
         print(f"Error in calculate_payment: {str(e)}")
         traceback.print_exc()
         return jsonify({'error': f'Calculation error: {str(e)}'}), 500
-
 
 @app.route('/api/amortization', methods=['POST'])
 def get_amortization():
@@ -132,17 +121,14 @@ def get_amortization():
     try:
         data = request.get_json()
         
-        # Extract parameters
         principal = float(data.get('principal', 0))
         monthly_payment = float(data.get('monthlyPayment', 0))
         monthly_rate = float(data.get('monthlyRate', 0))
         total_months = int(data.get('totalMonths', 0))
         
-        # Validate inputs
         if principal <= 0 or monthly_payment <= 0 or total_months <= 0:
             return jsonify({'error': 'Invalid parameters for amortization'}), 400
         
-        # Create calculator and generate schedule
         calculator = LoanCalculator(principal=principal, annual_rate=0, loan_term=0)
         schedule = calculator.generate_amortization_schedule(
             monthly_payment, monthly_rate, total_months
@@ -156,7 +142,6 @@ def get_amortization():
         print(f"Error in get_amortization: {str(e)}")
         traceback.print_exc()
         return jsonify({'error': f'Amortization error: {str(e)}'}), 500
-
 
 @app.route('/api/export-csv', methods=['POST'])
 def export_csv():
@@ -181,9 +166,6 @@ def export_csv():
             return jsonify({'error': 'No schedule data provided'}), 400
         
         # Generate CSV content
-        import io
-        import csv
-        
         output = io.StringIO()
         fieldnames = ['month', 'payment', 'principal', 'interest', 'balance']
         writer = csv.DictWriter(output, fieldnames=fieldnames)
@@ -201,62 +183,5 @@ def export_csv():
         traceback.print_exc()
         return jsonify({'error': f'Export error: {str(e)}'}), 500
 
-
-@app.route('/api/compare-methods', methods=['POST'])
-def compare_methods():
-    """
-    API endpoint to compare different calculation scenarios
-    (For future expansion with multiple methods)
-    """
-    try:
-        data = request.get_json()
-        
-        principal = float(data.get('principal', 0))
-        annual_rate = float(data.get('annualRate', 0))
-        loan_term = float(data.get('loanTerm', 0))
-        term_unit = data.get('termUnit', 'years')
-        compounding = data.get('compounding', 'monthly')
-        
-        calculator = LoanCalculator(
-            principal=principal,
-            annual_rate=annual_rate,
-            loan_term=loan_term,
-            term_unit=term_unit,
-            compounding=compounding
-        )
-        
-        # Calculate using Newton-Raphson
-        result = calculator.calculate_newton_raphson()
-        
-        return jsonify({
-            'newtonRaphson': result,
-            'method': 'Newton-Raphson Method'
-        }), 200
-    
-    except Exception as e:
-        print(f"Error in compare_methods: {str(e)}")
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
-
-
-# ERROR HANDLERS
-@app.errorhandler(404)
-def not_found(error):
-    """Handle 404 errors"""
-    return render_template('404.html'), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    """Handle 500 errors"""
-    return render_template('500.html'), 500
-
-
-
-# MAIN APPLICATION
 if __name__ == '__main__':
-
-    app.run(
-        host='127.0.0.1',
-        port=5000,
-        debug=True
-    )
+    app.run(host='127.0.0.1', port=5000, debug=True)

@@ -127,6 +127,107 @@ class NewtonRaphsonSolver:
         }
 
 
+class SecantSolver:
+    """
+    Secant method implementation for root finding
+    
+    The Secant method is similar to Newton-Raphson but:
+    1. Uses two initial guesses
+    2. Approximates derivative using finite difference
+    3. Does not require explicit derivative
+    
+    Formula: x(n+1) = x(n) - f(x(n)) * (x(n) - x(n-1)) / (f(x(n)) - f(x(n-1)))
+    """
+    
+    def __init__(self, tolerance=0.01, max_iterations=100):
+        """
+        Initialize Secant solver
+        
+        Args:
+            tolerance (float): Convergence tolerance (default: 0.01)
+            max_iterations (int): Maximum number of iterations (default: 100)
+        """
+        self.tolerance = tolerance
+        self.max_iterations = max_iterations
+    
+    def solve(self, func, initial_guess1, initial_guess2):
+        """
+        Solve for root using Secant method
+        
+        Algorithm:
+        1. Start with two initial guesses x0 and x1
+        2. Calculate f(x0) and f(x1)
+        3. Calculate next approximation using secant formula
+        4. Check convergence
+        5. Update guesses and repeat
+        
+        Args:
+            func: Function f(x) to find root of
+            initial_guess1: First initial guess x0
+            initial_guess2: Second initial guess x1
+        
+        Returns:
+            dict: {
+                'root': Final approximation,
+                'iterations': List of iteration details,
+                'converged': Boolean indicating convergence,
+                'num_iterations': Number of iterations performed
+            }
+        """
+        iterations = []
+        x0 = initial_guess1
+        x1 = initial_guess2
+        iteration_count = 0
+        
+        while iteration_count < self.max_iterations:
+            # Calculate function values
+            fx0 = func(x0)
+            fx1 = func(x1)
+            
+            # Check if denominator is too small (avoid division by zero)
+            if abs(fx1 - fx0) < 1e-10:
+                print(f"Warning: Denominator too small at iteration {iteration_count}")
+                break
+            
+            # Calculate next approximation using Secant formula
+            # x(n+1) = x(n) - f(x(n)) * (x(n) - x(n-1)) / (f(x(n)) - f(x(n-1)))
+            x_new = x1 - fx1 * (x1 - x0) / (fx1 - fx0)
+            
+            # Calculate error
+            error = abs(x_new - x1)
+            error_percent = (error / abs(x1)) * 100 if x1 != 0 else 0
+            
+            # Store iteration details
+            iterations.append({
+                'iteration': iteration_count,
+                'guess': round(x_new, 4),
+                'fx': round(fx1, 4),
+                'error': round(error_percent, 4)
+            })
+            
+            # Check convergence
+            if error < self.tolerance:
+                return {
+                    'root': x_new,
+                    'iterations': iterations,
+                    'converged': True,
+                    'num_iterations': iteration_count + 1
+                }
+            
+            # Update for next iteration
+            x0 = x1
+            x1 = x_new
+            iteration_count += 1
+        
+        # Max iterations reached without convergence
+        return {
+            'root': x1,
+            'iterations': iterations,
+            'converged': False,
+            'num_iterations': iteration_count
+        }
+
+
 class LoanCalculator:
     """
     Loan Payment Calculator using Newton-Raphson Method
@@ -311,6 +412,60 @@ class LoanCalculator:
             'numIterations': result['num_iterations'],
             'converged': result['converged'],
             'method': 'Newton-Raphson Method',
+            'monthlyRate': self.monthly_rate,
+            'totalMonths': self.total_months,
+            'principalAmount': self.principal,
+            'annualRate': self.annual_rate
+        }
+    
+    def calculate_secant(self, tolerance=0.01, max_iterations=100):
+        """
+        Calculate monthly payment using Secant method
+        
+        Process:
+        1. Define loan equation
+        2. Make two initial guesses
+        3. Apply Secant iteration
+        4. Calculate total payment and interest
+        
+        Args:
+            tolerance (float): Convergence tolerance
+            max_iterations (int): Maximum iterations allowed
+        
+        Returns:
+            dict: Same structure as calculate_newton_raphson
+        """
+        # Two initial guesses
+        initial_guess1 = self.principal * 0.015  # 1.5% of principal
+        initial_guess2 = self.principal * 0.02   # 2% of principal
+        
+        # Create Secant solver
+        solver = SecantSolver(
+            tolerance=tolerance,
+            max_iterations=max_iterations
+        )
+        
+        # Solve for monthly payment
+        result = solver.solve(
+            func=self._loan_function,
+            initial_guess1=initial_guess1,
+            initial_guess2=initial_guess2
+        )
+        
+        # Calculate final values
+        monthly_payment = result['root']
+        total_paid = monthly_payment * self.total_months
+        total_interest = total_paid - self.principal
+        
+        # Return comprehensive result
+        return {
+            'monthlyPayment': round(monthly_payment, 2),
+            'totalPaid': round(total_paid, 2),
+            'totalInterest': round(total_interest, 2),
+            'iterations': result['iterations'],
+            'numIterations': result['num_iterations'],
+            'converged': result['converged'],
+            'method': 'Secant Method',
             'monthlyRate': self.monthly_rate,
             'totalMonths': self.total_months,
             'principalAmount': self.principal,
