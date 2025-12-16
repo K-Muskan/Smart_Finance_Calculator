@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Growth Estimator - FinAnalyzer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+body {
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #f8fafc;
+    min-height: 100vh;
+    padding: 20px;
+}
+/* Navbar */
+.navbar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.nav-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 55px;
+}
+
+.logo {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.3s;
+}
+
+.logo:hover {
+    transform: scale(1.03);
+}
+
+.logo-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+ .container {
+    max-width: 1200px;
+    margin: -30px auto 50px;
+    padding: 0 20px;
+}
+
+ /* Page Header */
+.page-header {
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
+    color: white;
+    padding: 50px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.08) 0%, transparent 50%);
+    animation: float 6s ease-in-out infinite;
+}
+
+.page-header-content {
+    position: relative;
+    z-index: 1;
+}
+
+.page-header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+    font-weight: 700;
+    animation: fadeInUp 0.7s ease-out;
+}
+
+.page-header p {
+    font-size: 0.95rem;
+    opacity: 0.95;
+    animation: fadeInUp 0.7s ease-out 0.2s both;
+}
+
+.back-link {
+    color: #475569;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.85rem;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.back-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -4px;
+    left: 50%;
+    background: #2563eb;
+    transition: all 0.3s;
+    transform: translateX(-50%);
+}
+
+.back-link:hover {
+    color: #2563eb;
+}
+
+.back-link:hover::after {
+    width: 100%;
+}
+       .main-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    margin-bottom: 25px;
+}
+
+   .card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeInUp 0.7s ease-out;
+}
+
+.card:hover {
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+.card h2 {
+    font-size: 1.2rem;
+    color: #0f172a;
+    margin-bottom: 20px;
+    font-weight: 700;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #2563eb;
+}
+.form-section {
+    margin-bottom: 20px;
+}
+
+.form-section h3 {
+    font-size: 0.95rem;
+    color: #334155;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+       label {
+    display: block;
+    font-size: 0.85rem;
+    color: #475569;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+input[type="number"],
+input[type="text"],
+select,
+textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+    background: white;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+        .slider-container {
+            margin-top: 10px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: #e2e8f0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+      input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    border: none;
+}
+
+      .slider-value {
+    text-align: center;
+    color: #2563eb;
+    font-weight: 600;
+    margin-top: 5px;
+    font-size: 0.85rem;
+}
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            color: #64748b;
+        }
+.tab-btn.active {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    color: white;
+    border-color: #2563eb;
+}
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .file-upload {
+            border: 2px dashed #cbd5e1;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+      .file-upload:hover {
+    border-color: #2563eb;
+    background: rgba(37, 99, 235, 0.05);
+}
+        .file-upload input {
+            display: none;
+        }
+
+        .data-table {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .data-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: #f8fafc;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+            color: #334155;
+            position: sticky;
+            top: 0;
+            font-size: 0.85rem;
+        }
+
+        .data-table td {
+            padding: 10px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.85rem;
+        }
+
+        .data-table input {
+            padding: 6px 8px;
+            font-size: 0.85rem;
+        }
+
+        .add-row-btn,
+        .remove-row-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .add-row-btn {
+            background: #10b981;
+            color: white;
+            margin-top: 10px;
+        }
+
+        .add-row-btn:hover {
+            background: #059669;
+        }
+
+        .remove-row-btn {
+            background: #ef4444;
+            color: white;
+        }
+
+        .remove-row-btn:hover {
+            background: #dc2626;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+.btn-primary {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    color: white;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .results-tab {
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #64748b;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+       .results-tab.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+}
+
+        .results-section {
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+    .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+     .summary-card {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+    transition: all 0.3s;
+}
+
+.summary-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.3);
+}
+
+.summary-card h4 {
+    font-size: 0.8rem;
+    opacity: 0.95;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.summary-card .value {
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+      .method-info {
+    background: #eff6ff;
+    border-left: 4px solid #2563eb;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+        .method-info h4 {
+            color: #1e40af;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+
+        .method-info p {
+            color: #475569;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+      .chart-container {
+    position: relative;
+    height: 300px;
+    margin-bottom: 15px;
+}
+
+        .table-container {
+            overflow-x: auto;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .results-table th {
+            background: #f8fafc;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #334155;
+            font-size: 0.875rem;
+            position: sticky;
+            top: 0;
+        }
+
+        .results-table td {
+            padding: 12px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.875rem;
+        }
+
+        .results-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .positive {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .calculation-steps {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .calculation-steps .step {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #475569;
+            font-family: 'Courier New', monospace;
+        }
+
+        .calc-section {
+            display: none;
+        }
+
+        .calc-section.active {
+            display: block;
+        }
+
+        .interpolation-year-block {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .interpolation-year-block h4 {
+    color: #2563eb;
+    font-size: 1.05rem;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.interpolation-year-block .year-label {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    color: white;
+    padding: 5px 14px;
+    border-radius: 18px;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+        .interpolation-year-block .method-badge {
+            background: #eff6ff;
+            color: #1e40af;
+            padding: 6px 14px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid #dbeafe;
+        }
+
+       .formula-box {
+    background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+    border-left: 4px solid #2563eb;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    color: #1e40af;
+    overflow-x: auto;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+.formula-box strong {
+    display: block;
+    color: #2563eb;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    font-family: 'Inter', sans-serif;
+}
+
+        .difference-table-container {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow-x: auto;
+            border: 2px solid #e2e8f0;
+        }
+
+        .difference-table-container h5 {
+            color: #334155;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .difference-table-container h5::before {
+            content: "📊";
+            font-size: 1.2rem;
+        }
+
+        .difference-table-container pre {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #1e293b;
+            font-family: 'Courier New', monospace;
+            white-space: pre;
+            line-height: 1.6;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .interpolation-steps {
+            margin-top: 20px;
+        }
+
+        .interpolation-steps h5 {
+            color: #334155;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .interpolation-steps h5::before {
+            content: "📝";
+            font-size: 1.2rem;
+        }
+
+        .interpolation-step {
+            padding: 12px 18px;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #f8fafc 0%, white 100%);
+            border-left: 4px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.88rem;
+            color: #475569;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+            line-height: 1.6;
+        }
+
+       .interpolation-step:hover {
+    background: linear-gradient(to right, #e0e7ff 0%, #eff6ff 100%);
+    border-left-color: #2563eb;
+    transform: translateX(5px);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+       .step-header {
+    background: linear-gradient(135deg, #2563eb, #1e40af);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-weight: 600;
+    margin: 15px 0 8px 0;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+        .step-number {
+            background: rgba(255, 255, 255, 0.2);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .final-result {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 18px 24px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .final-result .result-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+.spinner {
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #2563eb;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+/* Footer */
+.footer {
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+    color: #94a3b8;
+    padding: 30px 20px 18px;
+    text-align: center;
+    margin-top: 50px;
+}
+
+.footer p {
+    font-size: 0.8rem;
+}
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 15px;
+            border-radius: 8px;
+            color: #991b1b;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+   @media (max-width: 768px) {
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .page-header p {
+        font-size: 0.85rem;
+    }
+
+    .input-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+}
+    </style>
+</head>
+<body>
+     <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <div class="logo-icon">📊</div>
+                <span>FinAnalyzer</span>
+            </a>
+            <a href="/" class="back-link">← Back to Home</a>
+        </div>
+    </nav>
+    <div class="container">
+        <!-- Header -->
+      <!-- Page Header -->
+<div class="page-header">
+    <div class="page-header-content">
+        <h1>Investment Growth Estimator</h1>
+        <p>Advanced numerical interpolation for precise investment projections</p>
+    </div>
+</div>
+
+        <div class="main-grid">
+            <!-- Input Panel -->
+            <div class="card">
+                <h2>📊 Investment Parameters</h2>
+
+                <form id="investmentForm">
+                    <!-- Basic Investment Info -->
+                    <div class="form-section">
+                        <h3>Basic Information</h3>
+                        
+                    <div class="input-row">
+    <div class="input-group">
+        <label for="initialInvestment">Initial Investment ($)</label>
+        <input type="number" id="initialInvestment" value="10000" min="0" step="100" required>
+    </div>
+
+    <div class="input-group">
+        <label for="recurringContribution">Recurring Contribution ($)</label>
+        <input type="number" id="recurringContribution" value="1000" min="0" step="100">
+    </div>
+</div>
+
+                        <div class="input-group">
+                            <label for="contributionFrequency">Contribution Frequency</label>
+                            <select id="contributionFrequency">
+                                <option value="yearly">Yearly</option>
+                                <option value="monthly">Monthly</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Time Period -->
+                    <div class="form-section">
+                        <h3>Investment Period</h3>
+                   <div class="input-row">
+    <div class="input-group">
+        <label for="startYear">Start Year</label>
+        <input type="number" id="startYear" value="2015" min="1900" max="2100" required>
+    </div>
+
+    <div class="input-group">
+        <label for="targetYear">Target Year</label>
+        <input type="number" id="targetYear" value="2025" min="1900" max="2100" required>
+    </div>
+</div>
+                    </div>
+
+                    <!-- Historical Data -->
+                    <div class="form-section">
+                        <h3>Historical Return Data</h3>
+                        
+                        <div class="tab-buttons">
+                            <button type="button" class="tab-btn active" data-tab="csv">CSV Upload</button>
+                            <button type="button" class="tab-btn" data-tab="manual">Manual Entry</button>
+                        </div>
+
+                        <!-- CSV Upload Tab -->
+                        <div class="tab-content active" id="csv-tab">
+                            <div class="file-upload" id="fileUpload">
+                                <input type="file" id="csvFile" accept=".csv">
+                                <p>📁 Click to upload CSV file</p>
+                                <small style="color: #64748b;">Format: Year,Rate(%)</small>
+                            </div>
+                            <div id="csvPreview" class="data-table" style="display: none;"></div>
+                        </div>
+
+                        <!-- Manual Entry Tab -->
+                        <div class="tab-content" id="manual-tab">
+                            <div class="data-table">
+                                <table id="historicalDataTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Year</th>
+                                            <th>Rate (%)</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><input type="number" class="year-input" value="2015" min="1900" max="2100"></td>
+                                            <td><input type="number" class="rate-input" value="5.0" step="0.1"></td>
+                                            <td><button type="button" class="remove-row-btn" onclick="removeRow(this)">✕</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="number" class="year-input" value="2018" min="1900" max="2100"></td>
+                                            <td><input type="number" class="rate-input" value="6.5" step="0.1"></td>
+                                            <td><button type="button" class="remove-row-btn" onclick="removeRow(this)">✕</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td><input type="number" class="year-input" value="2020" min="1900" max="2100"></td>
+                                            <td><input type="number" class="rate-input" value="7.2" step="0.1"></td>
+                                            <td><button type="button" class="remove-row-btn" onclick="removeRow(this)">✕</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="button" class="add-row-btn" onclick="addHistoricalRow()">+ Add Row</button>
+                        </div>
+                    </div>
+
+                    <!-- Risk Factor -->
+                    <div class="form-section">
+                        <h3>Risk & Volatility</h3>
+                        
+                        <div class="input-group">
+                            <label for="riskFactor">Risk Factor (Volatility)</label>
+                            <div class="slider-container">
+                                <input type="range" id="riskFactor" min="0" max="1" step="0.05" value="0">
+                                <div class="slider-value" id="riskValue">0.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="calculateBtn">
+                        <span>🚀</span> Calculate Investment Growth
+                    </button>
+
+                    <div class="error-message" id="errorMessage"></div>
+                </form>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="card">
+                <h2>📊 Results & Analysis</h2>
+
+                <!-- Loading State -->
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 15px; color: #64748b;">Calculating investment growth...</p>
+                </div>
+
+                <!-- Results Content -->
+                <div id="resultsContent" style="display: none;">
+                    <!-- Results Tabs -->
+                    <div class="results-tabs">
+                        <button class="results-tab active" data-results-tab="summary">Summary</button>
+                        <button class="results-tab" data-results-tab="chart">Growth Chart</button>
+                        <button class="results-tab" data-results-tab="table">Yearly Data</button>
+                        <button class="results-tab" data-results-tab="steps">Calculations</button>
+                    </div>
+
+                    <!-- Summary Tab -->
+                    <div class="results-section active" id="summary-section">
+                        <div class="method-info" id="methodInfo"></div>
+                        <div class="summary-grid" id="summaryGrid"></div>
+                    </div>
+
+                    <!-- Chart Tab -->
+                    <div class="results-section" id="chart-section">
+                        <div class="chart-container">
+                            <canvas id="growthChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Table Tab -->
+                    <div class="results-section" id="table-section">
+                        <div class="table-container">
+                            <table class="results-table" id="resultsTable"></table>
+                        </div>
+                    </div>
+
+                    <!-- Calculation Steps Tab -->
+                    <div class="results-section" id="steps-section">
+                        <div class="results-tabs" style="border-bottom: 2px solid #e2e8f0; margin-bottom: 20px;">
+                            <button class="results-tab active" data-calc-tab="overview">Overview</button>
+                            <button class="results-tab" data-calc-tab="interpolation">Interpolation Details</button>
+                        </div>
+                        
+                        <div class="calc-section active" id="overview-calc">
+                            <div class="calculation-steps" id="calculationSteps"></div>
+                        </div>
+                        
+                        <div class="calc-section" id="interpolation-calc">
+                            <div id="interpolationDetails"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Initial State -->
+                <div id="initialState" style="text-align: center; padding: 60px 20px; color: #94a3b8;">
+                    <div style="font-size: 4rem; margin-bottom: 20px;">📊</div>
+                    <p style="font-size: 1.1rem; margin-bottom: 10px;">Ready to Calculate</p>
+                    <p>Enter your investment parameters and click "Calculate" to see results</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chartInstance = null;
+        let csvData = [];
+
+        // Tab switching for input methods
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(`${tab}-tab`).classList.add('active');
+            });
+        });
+
+        // Tab switching for results
+        document.querySelectorAll('.results-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.resultsTab;
+                const calcTab = btn.dataset.calcTab;
+                
+                if (tab) {
+                    document.querySelectorAll('.results-tab').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    document.querySelectorAll('.results-section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    document.getElementById(`${tab}-section`).classList.add('active');
+                } else if (calcTab) {
+                    // For calculation details sub-tabs
+                    const parent = btn.closest('.results-section');
+                    parent.querySelectorAll('.results-tab').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    parent.querySelectorAll('.calc-section').forEach(section => {
+                        section.classList.remove('active');
+                    });
+                    parent.querySelector(`#${calcTab}-calc`).classList.add('active');
+                }
+            });
+        });
+
+        // Risk factor slider
+        document.getElementById('riskFactor').addEventListener('input', (e) => {
+            document.getElementById('riskValue').textContent = parseFloat(e.target.value).toFixed(2);
+        });
+
+        // File upload
+        document.getElementById('fileUpload').addEventListener('click', () => {
+            document.getElementById('csvFile').click();
+        });
+
+        document.getElementById('csvFile').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    parseCSV(event.target.result);
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function parseCSV(content) {
+            fetch('/api/investment/parse-csv', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ csv: content })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    csvData = data.data;
+                    displayCSVPreview(csvData);
+                }
+            })
+            .catch(error => {
+                showError('Failed to parse CSV: ' + error.message);
+            });
+        }
+
+        function displayCSVPreview(data) {
+            const preview = document.getElementById('csvPreview');
+            let html = '<table><thead><tr><th>Year</th><th>Rate (%)</th></tr></thead><tbody>';
+            data.forEach(item => {
+                html += `<tr><td>${item.year}</td><td>${item.rate}</td></tr>`;
+            });
+            html += '</tbody></table>';
+            preview.innerHTML = html;
+            preview.style.display = 'block';
+        }
+
+        // Add/Remove historical data rows
+        function addHistoricalRow() {
+            const table = document.getElementById('historicalDataTable').getElementsByTagName('tbody')[0];
+            const newRow = table.insertRow();
+            newRow.innerHTML = `
+                <td><input type="number" class="year-input" min="1900" max="2100"></td>
+                <td><input type="number" class="rate-input" step="0.1"></td>
+                <td><button type="button" class="remove-row-btn" onclick="removeRow(this)">✕</button></td>
+            `;
+        }
+
+        function removeRow(btn) {
+            const row = btn.closest('tr');
+            const table = row.closest('tbody');
+            if (table.getElementsByTagName('tr').length > 1) {
+                row.remove();
+            } else {
+                showError('At least one historical data point is required');
+            }
+        }
+
+        // Form submission
+        document.getElementById('investmentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Collect form data
+            const initialInvestment = parseFloat(document.getElementById('initialInvestment').value);
+            const recurringContribution = parseFloat(document.getElementById('recurringContribution').value);
+            const contributionFrequency = document.getElementById('contributionFrequency').value;
+            const startYear = parseInt(document.getElementById('startYear').value);
+            const targetYear = parseInt(document.getElementById('targetYear').value);
+            const riskFactor = parseFloat(document.getElementById('riskFactor').value);
+            
+            // Get historical data based on active tab
+            let historicalData;
+            const activeTab = document.querySelector('.tab-btn.active').dataset.tab;
+            
+            if (activeTab === 'csv' && csvData.length > 0) {
+                historicalData = csvData;
+            } else {
+                historicalData = [];
+                const rows = document.querySelectorAll('#historicalDataTable tbody tr');
+                rows.forEach(row => {
+                    const year = parseInt(row.querySelector('.year-input').value);
+                    const rate = parseFloat(row.querySelector('.rate-input').value);
+                    if (!isNaN(year) && !isNaN(rate)) {
+                        historicalData.push({ year, rate });
+                    }
+                });
+            }
+            
+            if (historicalData.length < 2) {
+                showError('At least 2 historical data points are required');
+                return;
+            }
+            
+            // Show loading state
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('initialState').style.display = 'none';
+            document.getElementById('resultsContent').style.display = 'none';
+            document.getElementById('errorMessage').classList.remove('active');
+            
+            try {
+                const response = await fetch('/api/investment/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        initialInvestment,
+                        recurringContribution,
+                        contributionFrequency,
+                        historicalData,
+                        targetYear,
+                        startYear,
+                        riskFactor
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    displayResults(result);
+                } else {
+                    showError(result.error || 'Calculation failed');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                document.getElementById('loading').classList.remove('active');
+            }
+        });
+
+        function displayResults(data) {
+            document.getElementById('resultsContent').style.display = 'block';
+            
+            // Display method info
+            const methodInfo = document.getElementById('methodInfo');
+            methodInfo.innerHTML = `
+                <h4>Interpolation Method: ${data.interpolation_method}</h4>
+                <p>${data.method_reason}</p>
+            `;
+            
+            // Display summary
+            const summaryGrid = document.getElementById('summaryGrid');
+            const summary = data.summary;
+            summaryGrid.innerHTML = `
+                <div class="summary-card">
+                    <h4>Initial Investment</h4>
+                    <div class="value">${summary.initial_investment.toLocaleString()}</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Total Contributions</h4>
+                    <div class="value">${summary.total_contributions.toLocaleString()}</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Final Value</h4>
+                    <div class="value">${summary.final_value.toLocaleString()}</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Total Growth</h4>
+                    <div class="value">${summary.total_growth.toLocaleString()}</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Avg Annual Growth</h4>
+                    <div class="value">${summary.avg_annual_growth_rate.toFixed(2)}%</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Investment Period</h4>
+                    <div class="value">${summary.years} Years</div>
+                </div>
+            `;
+            
+            // Display chart
+            displayChart(data.yearly_data);
+            
+            // Display table
+            displayTable(data.yearly_data);
+            
+            // Display calculation steps
+            displayCalculationSteps(data.calculation_steps);
+            
+            // Display interpolation details - NEW!
+            displayInterpolationDetails(data.interpolation_details);
+        }
+            summaryGrid.innerHTML = `
+                <div class="summary-card">
+                    <h4>Initial Investment</h4>
+                    <div class="value">$${summary.initial_investment.toLocaleString()}</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Total Contributions</h4>
+                    <div class="value">$${summary.total_contributions.toLocaleString()}</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Final Value</h4>
+                    <div class="value">$${summary.final_value.toLocaleString()}</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Total Growth</h4>
+                    <div class="value">${summary.total_growth.toLocaleString()}</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Avg Annual Growth</h4>
+                    <div class="value">${summary.avg_annual_growth_rate.toFixed(2)}%</div>
+                </div>
+                <div class="summary-card">
+                    <h4>Investment Period</h4>
+                    <div class="value">${summary.years} Years</div>
+                </div>
+            `;
+            
+            // Display chart
+            displayChart(data.yearly_data);
+            
+            // Display table
+            displayTable(data.yearly_data);
+            
+            // Display calculation steps
+            displayCalculationSteps(data.calculation_steps);
+        
+
+        function displayChart(yearlyData) {
+            const ctx = document.getElementById('growthChart').getContext('2d');
+            
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+            
+            const labels = yearlyData.map(d => d.year);
+            const values = yearlyData.map(d => d.value);
+            
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Investment Value ($)',
+                        data: values,
+                        borderColor: 'rgb(102, 126, 234)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: 'rgb(102, 126, 234)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Value: $' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayTable(yearlyData) {
+            const table = document.getElementById('resultsTable');
+            let html = `
+                <thead>
+                    <tr>
+                        <th>Year</th>
+                        <th>Rate (%)</th>
+                        <th>Contribution ($)</th>
+                        <th>Growth ($)</th>
+                        <th>Value ($)</th>
+                        <th>Method</th>
+                    </tr>
+                </thead>
+                <tbody>
+            `;
+            
+            yearlyData.forEach(row => {
+                html += `
+                    <tr>
+                        <td>${row.year}</td>
+                        <td>${row.rate.toFixed(2)}%</td>
+                        <td>${row.contribution.toLocaleString()}</td>
+                        <td class="positive">+${row.growth.toLocaleString()}</td>
+                        <td><strong>${row.value.toLocaleString()}</strong></td>
+                        <td><small>${row.interpolation_method}</small></td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody>';
+            table.innerHTML = html;
+        }
+
+        function displayCalculationSteps(steps) {
+            const container = document.getElementById('calculationSteps');
+            let html = '<h3 style="margin-bottom: 15px; color: #1e293b;">Year-by-Year Calculation Overview</h3>';
+            
+            steps.forEach((step, index) => {
+                html += `<div class="step">${step}</div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function displayInterpolationDetails(details) {
+            const container = document.getElementById('interpolationDetails');
+            let html = `
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h3 style="color: #1e293b; font-size: 1.4rem; margin-bottom: 10px;">📐 Detailed Interpolation Calculations</h3>
+                    <p style="color: #64748b; font-size: 0.95rem;">Complete step-by-step numerical analysis with difference tables and formulas</p>
+                </div>
+            `;
+            
+            details.forEach(item => {
+                const detail = item.details;
+                
+                html += `
+                    <div class="interpolation-year-block">
+                        <h4>
+                            <span class="year-label">Year ${item.year}</span>
+                            <span class="method-badge">${detail.method}</span>
+                        </h4>
+                `;
+                
+                // Show formula first
+                if (detail.formula) {
+                    html += `
+                        <div class="formula-box">
+                            <strong>📐 Interpolation Formula:</strong>
+                            ${detail.formula}
+                        </div>
+                    `;
+                }
+                
+                // Show difference table
+                if (detail.difference_table) {
+                    html += `
+                        <div class="difference-table-container">
+                            <h5>Difference Table</h5>
+                            <pre>${detail.difference_table}</pre>
+                        </div>
+                    `;
+                }
+                
+                // Show calculation steps organized by step number
+                if (detail.steps && detail.steps.length > 0) {
+                    html += '<div class="interpolation-steps"><h5>Calculation Steps</h5>';
+                    
+                    let currentStep = 0;
+                    let stepContent = [];
+                    
+                    detail.steps.forEach(step => {
+                        // Check if this is a step header (starts with "Step")
+                        if (step.startsWith('Step ')) {
+                            // If we have previous step content, add it
+                            if (stepContent.length > 0) {
+                                html += stepContent.join('');
+                                stepContent = [];
+                            }
+                            
+                            // Extract step number and title
+                            const stepMatch = step.match(/Step (\d+):\s*(.+)/);
+                            if (stepMatch) {
+                                currentStep = stepMatch[1];
+                                const stepTitle = stepMatch[2];
+                                html += `
+                                    <div class="step-header">
+                                        <span class="step-number">${currentStep}</span>
+                                        <span>${stepTitle}</span>
+                                    </div>
+                                `;
+                            }
+                        } else if (step.trim() !== '') {
+                            // Regular step content
+                            stepContent.push(`<div class="interpolation-step">${step}</div>`);
+                        }
+                    });
+                    
+                    // Add any remaining step content
+                    if (stepContent.length > 0) {
+                        html += stepContent.join('');
+                    }
+                    
+                    // Add final result box if we can find it
+                    const finalStep = detail.steps[detail.steps.length - 1];
+                    if (finalStep.includes('≈') || finalStep.includes('Final')) {
+                        const rateMatch = finalStep.match(/([\d.]+)%/);
+                        if (rateMatch) {
+                            html += `
+                                <div class="final-result">
+                                    ✅ Final Interpolated Rate
+                                    <div class="result-value">${parseFloat(rateMatch[1]).toFixed(4)}%</div>
+                                </div>
+                            `;
+                        }
+                    }
+                    
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.classList.add('active');
+            setTimeout(() => {
+                errorDiv.classList.remove('active');
+            }, 5000);
+        }
+    </script>
+</body>
+<!-- Footer -->
+    <footer class="footer">
+        <p>© 2024 FinAnalyzer - Financial Analysis Tool Using Numerical Methods | Numerical Analysis Project</p>
+    </footer>
+</body>
+</html>
