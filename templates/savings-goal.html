@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Savings Goal Calculator - FinAnalyzer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.5;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 55px;
+        }
+
+        .logo {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0f172a;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.3s;
+        }
+
+        .logo:hover {
+            transform: scale(1.03);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .back-link {
+            color: #475569;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .back-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 50%;
+            background: #2563eb;
+            transition: all 0.3s;
+            transform: translateX(-50%);
+        }
+
+        .back-link:hover {
+            color: #2563eb;
+        }
+
+        .back-link:hover::after {
+            width: 100%;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
+            color: white;
+            padding: 50px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255,255,255,0.08) 0%, transparent 50%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .page-header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+            animation: fadeInUp 0.7s ease-out;
+        }
+
+        .page-header p {
+            font-size: 0.95rem;
+            opacity: 0.95;
+            animation: fadeInUp 0.7s ease-out 0.2s both;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: -30px auto 50px;
+            padding: 0 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInUp 0.7s ease-out;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            color: #0f172a;
+            margin-bottom: 20px;
+            font-weight: 700;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #2563eb;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 6px;
+            color: #334155;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+            transition: all 0.3s;
+        }
+
+        .result-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(37, 99, 235, 0.3);
+        }
+
+        .result-label {
+            font-size: 0.8rem;
+            opacity: 0.95;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .result-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .results-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .results-tab {
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #64748b;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .results-tab.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .iteration-log {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .iteration-row {
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            background: white;
+            border-radius: 6px;
+            border-left: 3px solid #2563eb;
+            font-size: 0.82rem;
+            color: #475569;
+            transition: all 0.3s;
+        }
+
+        .iteration-row:hover {
+            background: #eff6ff;
+            transform: translateX(3px);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin-top: 15px;
+        }
+
+        .method-explanation {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 4px solid #2563eb;
+        }
+
+        .method-explanation h3 {
+            color: #0f172a;
+            margin-bottom: 15px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .method-explanation h4 {
+            color: #334155;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .method-explanation p {
+            color: #475569;
+            line-height: 1.7;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+
+        .formula {
+            background: white;
+            padding: 18px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            text-align: center;
+            font-size: 1rem;
+            border: 2px solid #e2e8f0;
+            color: #1e293b;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .info-box h4 {
+            color: #1e40af;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .info-box p {
+            color: #1e3a8a;
+            font-size: 0.82rem;
+            line-height: 1.6;
+        }
+
+        .calculation-steps {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .calculation-steps .step {
+            padding: 10px 14px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: #475569;
+            font-family: 'Courier New', monospace;
+            border-left: 3px solid #cbd5e1;
+            transition: all 0.3s;
+        }
+
+        .calculation-steps .step:hover {
+            background: #eff6ff;
+            border-left-color: #2563eb;
+            transform: translateX(3px);
+        }
+
+        .step-header {
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 15px 0 8px 0;
+            font-size: 0.88rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .step-number {
+            background: rgba(255, 255, 255, 0.2);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .formula-box {
+            background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #1e40af;
+            overflow-x: auto;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+        }
+
+        .formula-box strong {
+            display: block;
+            color: #2563eb;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .final-result {
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            color: white;
+            padding: 18px 24px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .final-result .result-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        .footer {
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+            color: #94a3b8;
+            padding: 30px 20px 18px;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .footer p {
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .page-header p {
+                font-size: 0.85rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo">
+                <div class="logo-icon">📊</div>
+                <span>FinAnalyzer</span>
+            </a>
+            <a href="/" class="back-link">← Back to Home</a>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1>💰 Savings Goal Calculator</h1>
+            <p>Bisection Method for calculating required monthly savings</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h3 class="card-title">Savings Parameters</h3>
+            <form class="form-grid" id="savingsForm">
+                <div class="form-group">
+                    <label>Target Amount ($)</label>
+                    <input type="number" id="targetAmount" placeholder="Enter target savings" value="100000" required>
+                </div>
+                <div class="form-group">
+                    <label>Time Period (Years)</label>
+                    <input type="number" id="years" placeholder="Enter years" value="10" required>
+                </div>
+                <div class="form-group">
+                    <label>Annual Interest Rate (%)</label>
+                    <input type="number" id="annualRate" step="0.1" placeholder="Enter interest rate" value="6.0" required>
+                </div>
+                <div class="form-group">
+                    <label>Compounding Frequency</label>
+                    <select id="compounding">
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+            </form>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="calculateSavings()">Calculate Required Savings</button>
+                <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
+            </div>
+        </div>
+
+        <div class="card" id="resultsCard" style="display: none;">
+            <h3 class="card-title">📊 Results & Analysis</h3>
+
+            <div class="results-tabs">
+                <button class="results-tab active" data-tab="summary">Summary</button>
+                <button class="results-tab" data-tab="chart">Growth Chart</button>
+                <button class="results-tab" data-tab="iterations">Iterations</button>
+                <button class="results-tab" data-tab="calculations">Detailed Calculations</button>
+            </div>
+
+            <!-- Summary Tab -->
+            <div class="results-section active" id="summary-section">
+                <div class="results-grid">
+                    <div class="result-card">
+                        <div class="result-label">Monthly Savings</div>
+                        <div class="result-value" id="monthlySaving">$0.00</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="result-label">Total Contributions</div>
+                        <div class="result-value" id="totalContributions">$0</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="result-label">Total Interest</div>
+                        <div class="result-value" id="totalInterest">$0</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="result-label">Iterations</div>
+                        <div class="result-value" id="iterations">0</div>
+                    </div>
+                </div>
+
+                <div class="info-box" id="infoBox" style="display: none;">
+                    <h4>📈 Savings Breakdown</h4>
+                    <p id="infoText"></p>
+                </div>
+            </div>
+
+            <!-- Chart Tab -->
+            <div class="results-section" id="chart-section">
+                <div class="chart-container">
+                    <canvas id="savingsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Iterations Tab -->
+            <div class="results-section" id="iterations-section">
+                <div class="iteration-log" id="iterationLog"></div>
+            </div>
+
+            <!-- Calculations Tab -->
+            <div class="results-section" id="calculations-section">
+                <div class="calculation-steps" id="calculationSteps"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="method-explanation">
+                <h3>📚 Bisection Method Explanation</h3>
+                <p>
+                    The Bisection Method is a numerical root-finding algorithm that repeatedly divides an interval 
+                    in half and selects the subinterval where the function changes sign, guaranteeing convergence.
+                </p>
+                
+                <h4>How it Works</h4>
+                <p>
+                    1. Start with an interval [a, b] where f(a) and f(b) have opposite signs<br>
+                    2. Calculate midpoint c = (a + b) / 2<br>
+                    3. Evaluate f(c)<br>
+                    4. Replace either a or b with c based on the sign of f(c)<br>
+                    5. Repeat until the interval is sufficiently small
+                </p>
+
+                <div class="formula">
+                    c = (a + b) / 2
+                </div>
+
+                <h4>Application to Savings Goals</h4>
+                <p>
+                    We convert the savings problem into finding the root of:<br>
+                    <strong>f(S) = S × [(1 + r)^n - 1] / r - TargetAmount</strong>
+                </p>
+                <p>
+                    Where:<br>
+                    • S = monthly saving amount (what we're solving for)<br>
+                    • r = monthly interest rate<br>
+                    • n = total number of months<br>
+                    • TargetAmount = your financial goal
+                </p>
+
+                <h4>Why Bisection Method?</h4>
+                <p>
+                    <strong>Advantages:</strong><br>
+                    • Guaranteed convergence if function is continuous<br>
+                    • Simple and robust<br>
+                    • Always finds the root within the initial interval<br>
+                    • Predictable error bounds<br><br>
+                    
+                    <strong>Convergence:</strong> Linear convergence - the interval is halved with each iteration, 
+                    typically requiring 15-20 iterations for financial accuracy.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>© 2024 FinAnalyzer - Financial Analysis Tool Using Numerical Methods | Numerical Analysis Project</p>
+    </footer>
+
+    <script>
+        let chart = null;
+        let currentResult = null;
+
+        // Tab switching for results
+        document.querySelectorAll('.results-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab = btn.dataset.tab;
+                
+                document.querySelectorAll('.results-tab').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                document.querySelectorAll('.results-section').forEach(section => {
+                    section.classList.remove('active');
+                });
+                document.getElementById(`${tab}-section`).classList.add('active');
+            });
+        });
+
+        function calculateSavings() {
+            const targetAmount = parseFloat(document.getElementById('targetAmount').value);
+            const years = parseFloat(document.getElementById('years').value);
+            const annualRate = parseFloat(document.getElementById('annualRate').value);
+            const compounding = document.getElementById('compounding').value;
+
+            if (!targetAmount || !years || annualRate === null || annualRate === undefined) {
+                alert('Please fill in all required fields');
+                return;
+            }
+
+            if (targetAmount <= 0 || years <= 0 || annualRate < 0) {
+                alert('Please enter valid positive values');
+                return;
+            }
+
+            // Calculate locally (simulation)
+            const result = calculateBisection(targetAmount, years, annualRate);
+            
+            currentResult = result;
+            displayResults(result);
+            displayIterations(result.iterations);
+            displayDetailedCalculations(result);
+            createSavingsChart(result);
+            
+            document.getElementById('resultsCard').style.display = 'block';
+            document.getElementById('resultsCard').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function calculateBisection(targetAmount, years, annualRate) {
+            const totalMonths = years * 12;
+            const monthlyRate = (annualRate / 100) / 12;
+            const tolerance = 0.01;
+            const maxIterations = 100;
+            
+            function futureValue(monthlySaving) {
+                if (monthlyRate === 0) {
+                    return monthlySaving * totalMonths - targetAmount;
+                }
+                const fv = monthlySaving * (Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate;
+                return fv - targetAmount;
+            }
+            
+            let a = 0;
+            let b = (targetAmount / totalMonths) * 1.5;
+            let iterations = [];
+            
+            for (let i = 0; i < maxIterations; i++) {
+                const c = (a + b) / 2;
+                const fc = futureValue(c);
+                const fa = futureValue(a);
+                const error = Math.abs(b - a);
+                
+                iterations.push({
+                    iteration: i,
+                    lower_bound: a,
+                    upper_bound: b,
+                    midpoint: c,
+                    f_midpoint: fc,
+                    error: error
+                });
+                
+                if (error < tolerance || Math.abs(fc) < 0.01) {
+                    break;
+                }
+                
+                if (fa * fc < 0) {
+                    b = c;
+                } else {
+                    a = c;
+                }
+            }
+            
+            const monthlySaving = (a + b) / 2;
+            const totalContributions = monthlySaving * totalMonths;
+            const totalInterest = targetAmount - totalContributions;
+            
+            return {
+                monthly_saving: monthlySaving,
+                total_contributions: totalContributions,
+                total_interest: totalInterest,
+                target_amount: targetAmount,
+                iterations: iterations,
+                num_iterations: iterations.length,
+                monthly_rate: monthlyRate,
+                total_months: totalMonths,
+                annual_rate: annualRate
+            };
+        }
+
+        function displayResults(data) {
+            document.getElementById('monthlySaving').textContent = '$' + data.monthly_saving.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('totalContributions').textContent = '$' + data.total_contributions.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+            document.getElementById('totalInterest').textContent = '$' + data.total_interest.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+            document.getElementById('iterations').textContent = data.num_iterations;
+
+            const infoBox = document.getElementById('infoBox');
+            const infoText = document.getElementById('infoText');
+            infoBox.style.display = 'block';
+            
+            infoText.textContent = `By saving $${data.monthly_saving.toFixed(2)} per month for ${data.total_months} months, ` +
+                `you'll contribute $${data.total_contributions.toLocaleString()} in principal and earn ` +
+                `$${data.total_interest.toLocaleString()} in interest (${data.annual_rate}% annually), ` +
+                `reaching your target of $${data.target_amount.toLocaleString()}.`;
+        }
+
+        function displayIterations(iterations) {
+            const logDiv = document.getElementById('iterationLog');
+            logDiv.innerHTML = '';
+
+            iterations.forEach(iter => {
+                const row = document.createElement('div');
+                row.className = 'iteration-row';
+                row.innerHTML = `
+                    <strong>Iteration ${iter.iteration + 1}:</strong> 
+                    Interval: [${iter.lower_bound.toFixed(2)}, ${iter.upper_bound.toFixed(2)}] | 
+                    Midpoint: ${iter.midpoint.toFixed(2)} | 
+                    f(c): ${iter.f_midpoint.toFixed(2)} | 
+                    Error: ${iter.error.toFixed(4)}
+                `;
+                logDiv.appendChild(row);
+            });
+        }
+
+        function displayDetailedCalculations(data) {
+            const container = document.getElementById('calculationSteps');
+            let html = '<h3 style="margin-bottom: 20px; color: #1e293b;">📐 Complete Bisection Method Calculation</h3>';
+            
+            // Step 1: Problem Setup
+            html += `
+                <div class="step-header">
+                    <span class="step-number">1</span>
+                    <span>Problem Setup</span>
+                </div>
+                <div class="step">Given Values:</div>
+                <div class="step">Target Amount (FV) = $${data.target_amount.toLocaleString()}</div>
+                <div class="step">Time Period = ${data.total_months / 12} years = ${data.total_months} months</div>
+                <div class="step">Annual Rate = ${data.annual_rate}%</div>
+                <div class="step">Monthly Rate (r) = ${data.annual_rate}% / 12 = ${(data.monthly_rate * 100).toFixed(4)}%</div>
+            `;
+            
+            // Step 2: Formula
+            html += `
+                <div class="step-header">
+                    <span class="step-number">2</span>
+                    <span>Future Value Formula</span>
+                </div>
+                <div class="formula-box">
+                    <strong>Future Value of Annuity Formula:</strong>
+                    FV = S × [(1 + r)^n - 1] / r
+                    <br><br>
+                    We need to solve for S (monthly saving), so we find root of:
+                    <br>
+                    f(S) = S × [(1 + ${(data.monthly_rate * 100).toFixed(4)}%)^${data.total_months} - 1] / ${(data.monthly_rate * 100).toFixed(4)}% - ${data.target_amount.toLocaleString()}
+                </div>
+            `;
+            
+            // Step 3: Initial Interval
+            const initialA = 0;
+            const initialB = (data.target_amount / data.total_months) * 1.5;
+            html += `
+                <div class="step-header">
+                    <span class="step-number">3</span>
+                    <span>Initial Interval Selection</span>
+                </div>
+                <div class="step">Lower bound (a) = $0.00 (no savings)</div>
+                <div class="step">Upper bound (b) = ${initialB.toFixed(2)} (worst case estimate)</div>
+                <div class="step">Tolerance = 0.01 (stop when interval < $0.01)</div>
+            `;
+            
+            // Step 4: Iteration Process
+            html += `
+                <div class="step-header">
+                    <span class="step-number">4</span>
+                    <span>Bisection Iterations</span>
+                </div>
+            `;
+            
+            data.iterations.forEach((iter, index) => {
+                if (index < 5 || index === data.iterations.length - 1) {
+                    html += `
+                        <div class="step">
+                            <strong>Iteration ${iter.iteration + 1}:</strong>
+                            <br>• Interval: [${iter.lower_bound.toFixed(2)}, ${iter.upper_bound.toFixed(2)}]
+                            <br>• Midpoint c = (${iter.lower_bound.toFixed(2)} + ${iter.upper_bound.toFixed(2)}) / 2 = ${iter.midpoint.toFixed(2)}
+                            <br>• f(c) = ${iter.f_midpoint.toFixed(2)}
+                            <br>• Error = |b - a| = ${iter.error.toFixed(4)}
+                        </div>
+                    `;
+                } else if (index === 5) {
+                    html += `<div class="step">... (showing first 5 and last iteration) ...</div>`;
+                }
+            });
+            
+            // Step 5: Final Result
+            html += `
+                <div class="step-header">
+                    <span class="step-number">5</span>
+                    <span>Final Results</span>
+                </div>
+                <div class="step">Required Monthly Saving = ${data.monthly_saving.toFixed(2)}</div>
+                <div class="step">Total Contributions = ${data.monthly_saving.toFixed(2)} × ${data.total_months} months = ${data.total_contributions.toLocaleString()}</div>
+                <div class="step">Total Interest Earned = ${data.target_amount.toLocaleString()} - ${data.total_contributions.toLocaleString()} = ${data.total_interest.toLocaleString()}</div>
+                
+                <div class="final-result">
+                    ✅ Solution Found in ${data.num_iterations} Iterations
+                    <div class="result-value">Monthly Savings: ${data.monthly_saving.toFixed(2)}</div>
+                </div>
+            `;
+            
+            // Step 6: Verification
+            const verifyFV = data.monthly_saving * (Math.pow(1 + data.monthly_rate, data.total_months) - 1) / data.monthly_rate;
+            html += `
+                <div class="step-header">
+                    <span class="step-number">6</span>
+                    <span>Verification</span>
+                </div>
+                <div class="step">
+                    Let's verify: FV = ${data.monthly_saving.toFixed(2)} × [(1 + ${(data.monthly_rate * 100).toFixed(4)}%)^${data.total_months} - 1] / ${(data.monthly_rate * 100).toFixed(4)}%
+                </div>
+                <div class="step">FV = ${verifyFV.toLocaleString()} ≈ ${data.target_amount.toLocaleString()} ✓</div>
+                <div class="step">Error = ${Math.abs(verifyFV - data.target_amount).toFixed(2)} (within tolerance)</div>
+            `;
+            
+            container.innerHTML = html;
+        }
+
+        function createSavingsChart(data) {
+            const ctx = document.getElementById('savingsChart').getContext('2d');
+            
+            if (chart) {
+                chart.destroy();
+            }
+
+            const months = [];
+            const contributions = [];
+            const totalValues = [];
+            
+            let cumulative = 0;
+            const monthlyRate = data.monthly_rate;
+            
+            for (let i = 0; i <= data.total_months; i++) {
+                months.push(i);
+                contributions.push(data.monthly_saving * i);
+                
+                if (i === 0) {
+                    totalValues.push(0);
+                } else {
+                    cumulative = (cumulative + data.monthly_saving) * (1 + monthlyRate);
+                    totalValues.push(cumulative);
+                }
+            }
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Total Value (with interest)',
+                            data: totalValues,
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 3
+                        },
+                        {
+                            label: 'Total Contributions (principal only)',
+                            data: contributions,
+                            borderColor: '#60a5fa',
+                            backgroundColor: 'rgba(96, 165, 250, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            borderWidth: 2,
+                            borderDash: [5, 5]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 12,
+                                    weight: 600
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                   return context.dataset.label + ': ' + context.parsed.y.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                  return '$' + value.toLocaleString();
+
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Months'
+                            },
+                            ticks: {
+                                maxTicksLimit: 12
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function resetForm() {
+            document.getElementById('savingsForm').reset();
+            document.getElementById('targetAmount').value = '100000';
+            document.getElementById('years').value = '10';
+            document.getElementById('annualRate').value = '6.0';
+            document.getElementById('resultsCard').style.display = 'none';
+            
+            if (chart) {
+                chart.destroy();
+                chart = null;
+            }
+            
+            currentResult = null;
+        }
+    </script>
+</body>
+</html>

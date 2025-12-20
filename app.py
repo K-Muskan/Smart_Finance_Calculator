@@ -6,6 +6,7 @@ import csv
 import sys
 from modules.investment_growth import InvestmentGrowthCalculator
 from modules.stock_trend_analyzer import StockTrendAnalyzer, parse_csv_data
+from modules.savings_goal import SavingsGoalCalculator
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-this'
@@ -765,6 +766,75 @@ def methods_info():
         }
     }), 200
   
+@app.route('/savings-goal')
+def savings_goal():
+    """Render the savings goal calculator page"""
+    return render_template('savings-goal.html')
 
+@app.route('/api/savings/calculate', methods=['POST'])
+def calculate_savings_goal():
+    """
+    API endpoint to calculate required monthly savings using Bisection Method
+    
+    Expected JSON input:
+    {
+        "targetAmount": 100000,
+        "years": 10,
+        "annualRate": 6.0,
+        "compounding": "monthly"
+    }
+    
+    Returns:
+    {
+        "monthly_saving": 615.47,
+        "total_contributions": 73856.40,
+        "total_interest": 26143.60,
+        "target_amount": 100000,
+        "iterations": [...],
+        "num_iterations": 12,
+        "converged": true,
+        "final_error": 0.01,
+        "method": "Bisection Method"
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        # Extract parameters
+        target_amount = float(data.get('targetAmount', 0))
+        years = float(data.get('years', 0))
+        annual_rate = float(data.get('annualRate', 0))
+        compounding = data.get('compounding', 'monthly')
+        
+        # Validate inputs
+        if target_amount <= 0:
+            return jsonify({'error': 'Target amount must be greater than 0'}), 400
+        
+        if years <= 0:
+            return jsonify({'error': 'Time period must be greater than 0'}), 400
+        
+        if annual_rate < 0:
+            return jsonify({'error': 'Interest rate cannot be negative'}), 400
+        
+        # Create calculator instance
+        calculator = SavingsGoalCalculator(
+            target_amount=target_amount,
+            years=years,
+            annual_rate=annual_rate,
+            compounding=compounding
+        )
+        
+        # Calculate required savings
+        result = calculator.calculate()
+        
+        return jsonify(result), 200
+    
+    except ValueError as e:
+        return jsonify({'error': f'Invalid input value: {str(e)}'}), 400
+    except Exception as e:
+        print(f"Error in calculate_savings_goal: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'Calculation error: {str(e)}'}), 500
+    
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000, debug=True)
