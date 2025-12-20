@@ -3,7 +3,9 @@ from modules.loan_payment import LoanCalculator
 import traceback
 import io
 import csv
+import sys
 from modules.investment_growth import InvestmentGrowthCalculator
+from modules.stock_trend_analyzer import StockTrendAnalyzer, parse_csv_data
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-this'
@@ -328,6 +330,441 @@ def parse_investment_csv():
         return jsonify({'error': f'CSV parsing error: {str(e)}'}), 500
 
 
+
+
+@app.route('/stock-trend-analyzer')
+def stock_trend_analyzer():
+    """Render the enhanced stock trend analyzer page"""
+    return render_template('stock-trend-analyzer.html')
+
+@app.route('/api/stock/analyze', methods=['POST'])
+def analyze_stock_trend():
+    """
+    API endpoint to analyze stock trends using curve fitting
+    
+    Expected JSON input:
+    {
+        "companyName": "Apple Inc.",
+        "csvData": "Date,Open,High,Low,Close,...",
+        "method": "auto"  // or "linear", "quadratic", "cubic"
+    }
+    
+    Returns:
+    {
+        "company_name": "Apple Inc.",
+        "statistics": {...},
+        "curve_fitting": {...},
+        "method_used": "Linear",
+        "dates": [...],
+        "prices": [...],
+        "comparison": {...}  // if method is "auto"
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        # Extract parameters
+        company_name = data.get('companyName', 'Company')
+        csv_data = data.get('csvData', '')
+        method = data.get('method', 'auto')
+        
+        # Validate inputs
+        if not csv_data:
+            return jsonify({'error': 'CSV data is required'}), 400
+        
+        if method not in ['auto', 'linear', 'quadratic', 'cubic']:
+            return jsonify({'error': 'Invalid analysis method'}), 400
+        
+        # Parse CSV data
+        try:
+            dates, prices = parse_csv_data(csv_data)
+        except ValueError as e:
+            return jsonify({'error': f'CSV parsing error: {str(e)}'}), 400
+        
+        # Create analyzer instance
+        analyzer = StockTrendAnalyzer(
+            dates=dates,
+            prices=prices,
+            company_name=company_name
+        )
+        
+        # Perform analysis
+        result = analyzer.analyze_complete(method=method)
+        
+        return jsonify(result), 200
+    
+    except ValueError as e:
+        return jsonify({'error': f'Invalid input value: {str(e)}'}), 400
+    except Exception as e:
+        print(f"Error in analyze_stock_trend: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'Analysis error: {str(e)}'}), 500
+
+
+@app.route('/api/stock/root-finding', methods=['POST'])
+def stock_root_finding():
+    """
+    API endpoint to find when stock will reach target price using root finding methods
+    
+    Expected JSON input:
+    {
+        "companyName": "Apple Inc.",
+        "dates": ["2024-01-01", "2024-01-02", ...],
+        "prices": [150.25, 152.30, ...],
+        "method": "auto",  // which curve fitting method was used
+        "targetPrice": 200.00,
+        "findingMethod": "all"  // "bisection", "false_position", "newton_raphson", or "all"
+    }
+    
+    Returns:
+    {
+        "target_price": 200.00,
+        "bisection": {...},
+        "false_position": {...},
+        "newton_raphson": {...},
+        "fastest_method": "Newton-Raphson Method",
+        "all_successful": true
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        # Extract parameters
+        company_name = data.get('companyName', 'Company')
+        dates = data.get('dates', [])
+        prices = data.get('prices', [])
+        method = data.get('method', 'auto')
+        target_price = float(data.get('targetPrice', 0))
+        finding_method = data.get('findingMethod', 'all')
+        
+        # Validate inputs
+        if not dates or not prices:
+            return jsonify({'error': 'Dates and prices are required'}), 400
+        
+        if len(dates) != len(prices):
+            return jsonify({'error': 'Dates and prices must have same length'}), 400
+        
+        if target_price <= 0:
+            return jsonify({'error': 'Target price must be greater than 0'}), 400
+        
+        # Create analyzer instance
+        analyzer = StockTrendAnalyzer(
+            dates=dates,
+            prices=prices,
+            company_name=company_name
+        )
+        
+        # First, perform curve fitting to set up the model
+        analyzer.analyze_complete(method=method)
+        
+        # Perform root finding based on requested method
+        if finding_method == 'bisection':
+            result = analyzer.bisection_method(target_price)
+        elif finding_method == 'false_position':
+            result = analyzer.false_position_method(target_price)
+        elif finding_method == 'newton_raphson':
+            result = analyzer.newton_raphson_method(target_price)
+        else:  # 'all' - compare all methods
+            result = analyzer.compare_root_finding_methods(target_price)
+        
+        return jsonify(result), 200
+    
+    except ValueError as e:
+        return jsonify({'error': f'Invalid input value: {str(e)}'}), 400
+    except Exception as e:
+        print(f"Error in stock_root_finding: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'Root finding error: {str(e)}'}), 500
+
+
+@app.route('/api/stock/error-analysis', methods=['POST'])
+def stock_error_analysis():
+    """
+    API endpoint to perform comprehensive error analysis on stock trend predictions
+    
+    Expected JSON input:
+    {
+        "companyName": "Apple Inc.",
+        "dates": ["2024-01-01", "2024-01-02", ...],
+        "prices": [150.25, 152.30, ...],
+        "method": "auto"  // which curve fitting method was used
+    }
+    
+    Returns:
+    {
+        "truncation_error": {
+            "current_model": "Quadratic",
+            "max_truncation_error": 0.0234,
+            "mean_truncation_error": 0.0089,
+            "error_percentage": 0.15,
+            "message": "..."
+        },
+        "roundoff_error": {
+            "machine_epsilon": "2.22e-16",
+            "max_actual_error": "3.45e-15",
+            "mean_actual_error": "1.23e-15",
+            "stability": "Excellent",
+            "message": "..."
+        },
+        "condition_number": {
+            "estimated_condition_number": 45.67,
+            "stability_assessment": "Excellent - Well-conditioned",
+            "numerical_risk": "Very Low",
+            "message": "...",
+            "recommendation": "..."
+        },
+        "overall_quality": "Excellent",
+        "summary": {...}
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        # Extract parameters
+        company_name = data.get('companyName', 'Company')
+        dates = data.get('dates', [])
+        prices = data.get('prices', [])
+        method = data.get('method', 'auto')
+        
+        # Validate inputs
+        if not dates or not prices:
+            return jsonify({'error': 'Dates and prices are required'}), 400
+        
+        if len(dates) != len(prices):
+            return jsonify({'error': 'Dates and prices must have same length'}), 400
+        
+        # Create analyzer instance
+        analyzer = StockTrendAnalyzer(
+            dates=dates,
+            prices=prices,
+            company_name=company_name
+        )
+        
+        # First, perform curve fitting to set up the model
+        analyzer.analyze_complete(method=method)
+        
+        # Perform comprehensive error analysis
+        result = analyzer.comprehensive_error_analysis()
+        
+        return jsonify(result), 200
+    
+    except ValueError as e:
+        return jsonify({'error': f'Invalid input value: {str(e)}'}), 400
+    except Exception as e:
+        print(f"Error in stock_error_analysis: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'Error analysis failed: {str(e)}'}), 500
+
+
+@app.route('/api/stock/truncation-error', methods=['POST'])
+def stock_truncation_error():
+    """
+    API endpoint to calculate truncation error only
+    
+    Expected JSON input:
+    {
+        "companyName": "Apple Inc.",
+        "dates": ["2024-01-01", ...],
+        "prices": [150.25, ...],
+        "method": "linear"
+    }
+    
+    Returns:
+    {
+        "current_model": "Linear",
+        "max_truncation_error": 0.0234,
+        "mean_truncation_error": 0.0089,
+        "error_percentage": 0.15,
+        "message": "..."
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        company_name = data.get('companyName', 'Company')
+        dates = data.get('dates', [])
+        prices = data.get('prices', [])
+        method = data.get('method', 'auto')
+        
+        if not dates or not prices:
+            return jsonify({'error': 'Dates and prices are required'}), 400
+        
+        analyzer = StockTrendAnalyzer(dates=dates, prices=prices, company_name=company_name)
+        analyzer.analyze_complete(method=method)
+        
+        result = analyzer.calculate_truncation_error()
+        return jsonify(result), 200
+    
+    except Exception as e:
+        print(f"Error in stock_truncation_error: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'Truncation error calculation failed: {str(e)}'}), 500
+
+
+@app.route('/api/stock/roundoff-error', methods=['POST'])
+def stock_roundoff_error():
+    """
+    API endpoint to calculate round-off error only
+    
+    Expected JSON input:
+    {
+        "companyName": "Apple Inc.",
+        "dates": ["2024-01-01", ...],
+        "prices": [150.25, ...],
+        "method": "linear"
+    }
+    
+    Returns:
+    {
+        "machine_epsilon": "2.22e-16",
+        "max_actual_error": "3.45e-15",
+        "mean_actual_error": "1.23e-15",
+        "stability": "Excellent",
+        "message": "..."
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        company_name = data.get('companyName', 'Company')
+        dates = data.get('dates', [])
+        prices = data.get('prices', [])
+        method = data.get('method', 'auto')
+        
+        if not dates or not prices:
+            return jsonify({'error': 'Dates and prices are required'}), 400
+        
+        analyzer = StockTrendAnalyzer(dates=dates, prices=prices, company_name=company_name)
+        analyzer.analyze_complete(method=method)
+        
+        result = analyzer.calculate_roundoff_error()
+        return jsonify(result), 200
+    
+    except Exception as e:
+        print(f"Error in stock_roundoff_error: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'Round-off error calculation failed: {str(e)}'}), 500
+
+
+@app.route('/api/stock/condition-number', methods=['POST'])
+def stock_condition_number():
+    """
+    API endpoint to calculate condition number only
+    
+    Expected JSON input:
+    {
+        "companyName": "Apple Inc.",
+        "dates": ["2024-01-01", ...],
+        "prices": [150.25, ...],
+        "method": "linear"
+    }
+    
+    Returns:
+    {
+        "estimated_condition_number": 45.67,
+        "stability_assessment": "Excellent - Well-conditioned",
+        "numerical_risk": "Very Low",
+        "message": "...",
+        "recommendation": "..."
+    }
+    """
+    try:
+        data = request.get_json()
+        
+        company_name = data.get('companyName', 'Company')
+        dates = data.get('dates', [])
+        prices = data.get('prices', [])
+        method = data.get('method', 'auto')
+        
+        if not dates or not prices:
+            return jsonify({'error': 'Dates and prices are required'}), 400
+        
+        analyzer = StockTrendAnalyzer(dates=dates, prices=prices, company_name=company_name)
+        analyzer.analyze_complete(method=method)
+        
+        result = analyzer.calculate_condition_number()
+        return jsonify(result), 200
+    
+    except Exception as e:
+        print(f"Error in stock_condition_number: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f'Condition number calculation failed: {str(e)}'}), 500
+
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    """
+    Health check endpoint to verify API is running
+    """
+    return jsonify({
+        'status': 'healthy',
+        'version': '2.0',
+        'features': [
+            'Loan Payment Calculator',
+            'Investment Growth Calculator',
+            'Stock Trend Analyzer',
+            'Root Finding Methods',
+            'Error Analysis'
+        ]
+    }), 200
+
+
+@app.route('/api/methods-info', methods=['GET'])
+def methods_info():
+    """
+    Get information about available numerical methods
+    """
+    return jsonify({
+        'root_finding_methods': {
+            'bisection': {
+                'name': 'Bisection Method',
+                'convergence': 'Linear',
+                'speed': 'Slow',
+                'reliability': 'Guaranteed',
+                'description': 'Most stable method, guaranteed to find root'
+            },
+            'false_position': {
+                'name': 'False Position Method',
+                'convergence': 'Super-linear',
+                'speed': 'Medium',
+                'reliability': 'Very High',
+                'description': 'Good balance of speed and reliability'
+            },
+            'newton_raphson': {
+                'name': 'Newton-Raphson Method',
+                'convergence': 'Quadratic',
+                'speed': 'Fast',
+                'reliability': 'High',
+                'description': 'Fastest method when it works, requires derivative'
+            }
+        },
+        'curve_fitting_methods': {
+            'linear': {
+                'name': 'Linear',
+                'equation': 'y = mx + c',
+                'degree': 1,
+                'best_for': 'Steady trends'
+            },
+            'quadratic': {
+                'name': 'Quadratic',
+                'equation': 'y = ax² + bx + c',
+                'degree': 2,
+                'best_for': 'Curved trends'
+            },
+            'cubic': {
+                'name': 'Cubic',
+                'equation': 'y = ax³ + bx² + cx + d',
+                'degree': 3,
+                'best_for': 'Complex patterns'
+            }
+        },
+        'error_analysis_types': {
+            'truncation_error': 'Error from polynomial approximation',
+            'roundoff_error': 'Error from computer arithmetic',
+            'condition_number': 'Numerical stability measure'
+        }
+    }), 200
+  
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000, debug=True)
