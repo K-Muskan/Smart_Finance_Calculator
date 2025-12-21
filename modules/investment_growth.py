@@ -105,13 +105,26 @@ class InvestmentGrowthCalculator:
                 result += f"{header:<15}"
         result += "\n" + "-"*60 + "\n"
         
-        # Data rows
-        for i in range(n):
-            result += f"{self.years[i]:<10}"
-            for j in range(n - i):
-                if j < len(table[i]):
-                    result += f"{table[i][j]:<15.6f}"
-            result += "\n"
+        # Data rows - FIXED FOR BACKWARD METHOD
+        if method == "Backward":
+            # For backward differences, show from top to bottom
+            # Only show non-zero differences
+            for i in range(n):
+                result += f"{self.years[i]:<10}"
+                result += f"{table[i][0]:<15.6f}"  # Always show f(x)
+                # Show differences only if they exist (row i can have up to i differences)
+                for j in range(1, min(i + 1, n)):
+                    if j < len(table[i]) and table[i][j] != 0:
+                        result += f"{table[i][j]:<15.6f}"
+                result += "\n"
+        else:
+            # Original logic for Forward and other methods
+            for i in range(n):
+                result += f"{self.years[i]:<10}"
+                for j in range(n - i):
+                    if j < len(table[i]):
+                        result += f"{table[i][j]:<15.6f}"
+                result += "\n"
         
         result += f"{'='*60}\n"
         return result
